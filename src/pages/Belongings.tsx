@@ -17,9 +17,12 @@ const BelongingsPage = () => {
     const fetchBelongings = async () => {
       try {
         const data = await getBelongings();
+        const sortedData = [...data].sort(
+          (a, b) => Number(b.id) - Number(a.id),
+        );
 
         if (active) {
-          setBelongings(data);
+          setBelongings(sortedData);
         }
       } catch {
         if (active) {

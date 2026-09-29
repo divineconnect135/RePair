@@ -1,11 +1,14 @@
 import { Link } from "react-router";
 import type { Belonging } from "../types/types";
+import { getWarrantyStatus } from "../utils/warranty";
 
 type BelongingProp = {
   belonging: Belonging;
 };
 
 const BelongingCard = ({ belonging }: BelongingProp) => {
+  const warrantyStatus = getWarrantyStatus(belonging.warrantyExpiry);
+
   return (
     <>
       <article className="w-full bg-slate-800  space-y-2 text-white ">
@@ -18,7 +21,21 @@ const BelongingCard = ({ belonging }: BelongingProp) => {
         </Link>
         <div className="flex flex-col gap-2 p-2">
           <p className="mt-2 text-green-600 text-sm">
-            {belonging.warrantyExpiry}
+            <span
+              className={`rounded-full px-3 py-1 text-sm font-medium ${
+                warrantyStatus === "active"
+                  ? "bg-green-100 text-green-700"
+                  : warrantyStatus === "expiring-soon"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-700"
+              }`}
+            >
+              {warrantyStatus === "active"
+                ? "Active"
+                : warrantyStatus === "expiring-soon"
+                  ? "Expiring Soon"
+                  : "Expired"}
+            </span>
           </p>
           <h3 className="text-xl font-medium">{belonging.name}</h3>
           <h3 className="text-sm font-medium text-slate-400">

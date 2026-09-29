@@ -15,3 +15,14 @@ export type Belonging = {
 };
 
 export type CreateBelongingInput = Omit<Belonging, "id">;
+
+export type MaintenanceRecord = {
+  id: string;
+  belongingId: string;
+  title: string;
+  description: string;
+  date: string;
+  cost: number;
+  currency: string;
+};
+export type CreateMaintenanceInput = Omit<MaintenanceRecord, "id">;

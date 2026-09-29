@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
-import type { Belonging } from "../types/types";
+import type { Belonging, MaintenanceRecord } from "../types/types";
 
-import { deleteBelonging, getBelongingsById } from "../api/api";
+import {
+  deleteBelonging,
+  deleteMaintenanceRecord,
+  getBelongingsById,
+  getMaintenanceRecordById,
+} from "../api/api";
 
 const BelongingDetailPage = () => {
   const { id } = useParams();
@@ -15,6 +20,12 @@ const BelongingDetailPage = () => {
   const [deleting, setDeleting] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+
+  const [maintenanceRecords, setMaintenanceRecords] = useState<
+    MaintenanceRecord[]
+  >([]);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(true);
+  const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -46,6 +57,41 @@ const BelongingDetailPage = () => {
     };
 
     fetchBelonging();
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) {
+      console.log("failed");
+      return;
+    }
+
+    let active = true;
+
+    const fetchMaintenanceRecord = async () => {
+      setMaintenanceLoading(true);
+      setMaintenanceError(null);
+
+      try {
+        const data = await getMaintenanceRecordById(id);
+        if (active) {
+          setMaintenanceRecords(data);
+        }
+      } catch {
+        if (active) {
+          setMaintenanceError("Failed to Fetch");
+        }
+      } finally {
+        if (active) {
+          setMaintenanceLoading(false);
+        }
+      }
+    };
+
+    fetchMaintenanceRecord();
 
     return () => {
       active = false;
@@ -99,11 +145,28 @@ const BelongingDetailPage = () => {
     );
   }
 
+  const handleRecordDelete = async (recordId: string) => {
+    const confirm = window.confirm("Are you sure you want to delete a record?");
+
+    if (!confirm) return;
+    setMaintenanceError(null);
+
+    try {
+      await deleteMaintenanceRecord(recordId);
+
+      setMaintenanceRecords((currentRecords) =>
+        currentRecords.filter((record) => record.id !== recordId),
+      );
+    } catch {
+      setMaintenanceError("Failed to DELETE");
+    }
+  };
+
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-10">
       <section className="mx-auto max-w-6xl">
         <Link
-          to="/belongings"
+          to="/"
           className="mb-6 inline-block text-sm font-medium text-blue-600 hover:underline"
         >
           ← Back to Belongings
@@ -208,6 +271,76 @@ const BelongingDetailPage = () => {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Maintenance History */}
+        <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm md:p-10">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-slate-900">
+              Maintenance History
+            </h2>
+
+            <p className="mt-1 text-slate-500">
+              Repairs and maintenance for this belonging.
+            </p>
+          </div>
+
+          {maintenanceLoading && (
+            <p className="text-slate-500">Loading maintenance records...</p>
+          )}
+
+          {maintenanceError && (
+            <p className="text-red-600">{maintenanceError}</p>
+          )}
+
+          {!maintenanceLoading &&
+            !maintenanceError &&
+            maintenanceRecords.length === 0 && (
+              <p className="text-slate-500">No maintenance records yet.</p>
+            )}
+
+          {!maintenanceLoading &&
+            !maintenanceError &&
+            maintenanceRecords.length > 0 && (
+              <div className="space-y-6">
+                {maintenanceRecords.map((record) => (
+                  <article
+                    key={record.id}
+                    className="rounded-xl border border-slate-200 p-5 "
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          {record.title}
+                        </h3>
+
+                        <p className="mt-1 text-sm text-slate-500">
+                          {record.date}
+                        </p>
+                      </div>
+
+                      <p className="font-semibold text-slate-900">
+                        {record.currency} {record.cost.toLocaleString()}
+                      </p>
+                    </div>
+
+                    <p className="mt-3 text-slate-600">{record.description}</p>
+                    <button
+                      onClick={() => handleRecordDelete(record.id)}
+                      className="rounded-lg bg-slate-500 px-2 py-2 hover:bg-red-600  text-white mt-2 cursor-pointer"
+                    >
+                      Delete Record
+                    </button>
+                  </article>
+                ))}
+                <Link
+                  to={`/belongings/${id}/add`}
+                  className="rounded-xl bg-slate-500 px-2 py-4 hover:bg-amber-600  text-white"
+                >
+                  Add Maintenance History
+                </Link>
+              </div>
+            )}
         </div>
       </section>
     </main>
